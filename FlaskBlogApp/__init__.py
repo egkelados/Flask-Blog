@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flask_bcrypt import Bcrypt
 
+from datetime import timedelta
 
 app = Flask(__name__)
 
@@ -13,6 +14,8 @@ app.config['WTF_CSRF_SECRET_KEY'] = '4d4e1bbd669554115557e787b76baaee'
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///flask_course_database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=10)
 
 db = SQLAlchemy(app)
 
