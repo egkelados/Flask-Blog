@@ -44,7 +44,7 @@ body {
 	color:  black;
 }
 
-.main-article-category:hover,.main-article-title:hover,.author-name{
+.main-article-category:hover,div.main-article-title:hover,.author-name{
 	text-decoration: underline;
 	color:  black;
 }

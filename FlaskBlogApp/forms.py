@@ -1,9 +1,18 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, Optional
 from FlaskBlogApp.models import User
 from flask_login import current_user
 
+
+def maxImageSize(max_size=2):
+   max_bytes = max_size * 1024 * 1024
+   def _check_file_size(form, field):
+      if len(field.data.read()) > max_bytes:
+         raise ValidationError(f'Το μέγεθος της εικόνας δε μπορεί να υπεβαίνει τα {max_size} MB')
+
+   return _check_file_size
 
 
 def validate_email(form, email):
@@ -82,7 +91,12 @@ class AccountUpdateForm(FlaskForm):
                            validators=[DataRequired(message="Αυτό το πεδίο δε μπορεί να είναι κενό."), 
                                        Email(message="Παρακαλώ εισάγετε ένα σωστό email")])
 
+    profile_image = FileField('Εικόνα Προφίλ', validators=[Optional(strip_whitespace=True),
+                                                           FileAllowed([ 'jpg', 'jpeg', 'png' ],
+                                                            'Επιτρέπονται μόνο αρχεία εικόνων τύπου jpg, jpeg και png!'),
+                                                           maxImageSize(max_size=2)])
     submit = SubmitField('Update')
+
 
     def validate_username(self, username):
       if username.data != current_user.username:

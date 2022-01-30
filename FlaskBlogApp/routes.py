@@ -1,23 +1,54 @@
-from flask import(render_template,
-                  redirect,
-                  url_for,
-                  request,
-                  flash,
-                  abort)
+from flask import (render_template,
+                   redirect,
+                   url_for,
+                   request,
+                   flash, abort)
 
-from FlaskBlogApp.forms import SignupForm, LoginForm, NewArticleForm, AccountUpdateForm 
+from FlaskBlogApp.forms import SignupForm, LoginForm, NewArticleForm, AccountUpdateForm
 
 from FlaskBlogApp import app, db, bcrypt
 
-from FlaskBlogApp.models import User, Article 
+from FlaskBlogApp.models import User, Article
 
 from flask_login import login_user, current_user, logout_user, login_required
+
+import secrets, os
+
+from PIL import Image
+
+#Size is tuple like (640, 480), width - height
+def image_save(image, where, size):
+    random_filename = secrets.token_hex(12)
+    file_name, file_extension = os.path.splitext(image.filename)
+    image_filename = random_filename + file_extension
+
+    image_path = os.path.join(app.root_path, 'static/images', where, image_filename)
+
+    img = Image.open(image)
+
+    img.thumbnail(size)
+
+    img.save(image_path)
+
+    return image_filename
+
+
+
+
 
 @app.route("/index/")
 @app.route("/")#arxikh selida!
 def root():
-    articles = Article.query.all()
+    articles = Article.query.order_by(Article.date_created.desc())
     return render_template("index.html", articles=articles)
+
+
+@app.route("/articles_by_author/<int:author_id>")
+def articles_by_author(author_id):
+
+    user = User.query.get_or_404(author_id)
+    articles = Article.query.filter_by(author=user).order_by(Article.date_created.desc())
+    return render_template("articles_by_author.html", articles=articles, author=user)
 
 
 @app.route("/signup/", methods=["GET", "POST"])
@@ -94,7 +125,42 @@ def new_article():
         return redirect(url_for("root"))
         # print(article_title, article_body)
 
-    return render_template("new_article.html", form=form)
+    return render_template("new_article.html", form=form, page_title="New Article Input")
+
+
+
+@app.route("/full_article/<int:article_id>",methods=['GET'])
+def full_article(article_id):
+
+    article = Article.query.get_or_404(article_id)
+    return render_template("full_article.html", article=article)
+
+    # article = Article.query.get(article_id)
+
+    # if article:
+    #     return render_template("full_article.html", article=article)
+
+    # else:
+    #     flash(f"")
+    #     return redirect(url_for("root"))
+
+@app.route("/delete_article/<int:article_id>",methods=['GET','POST'])
+@login_required
+def delete_article(article_id):
+
+    article = Article.query.filter_by(id=article_id, author=current_user).first_or_404()
+    article_title = Article.article_title
+    if article:
+
+        db.session.delete(article)
+        db.session.commit()
+        flash(f"The article {article.article_title} deleted!", "success")
+        return redirect(url_for("root"))
+
+    flash(f"The article {article.article_title} was not found!", "warning")
+
+    return redirect(url_for("root"))
+
 
 @app.route("/account/", methods=['GET', 'POST'])
 @login_required
@@ -105,6 +171,18 @@ def account():
     if request.method == 'POST' and form.validate_on_submit():
         current_user.username = form.username.data
         current_user.email = form.email.data
+
+        profile_image = form.profile_image.data
+        print(profile_image)
+        if form.profile_image.data:
+
+            try:
+                image_file = image_save(form.profile_image.data, 'profiles_images', (150, 150))
+            except:
+                abort(415)
+
+            current_user.profile_image = image_file
+
 
         db.session.commit()
         flash(f"The account of user <b>{current_user.username}</b> was succesfully change!!", "success")
@@ -136,4 +214,4 @@ def edit_article(article_id):
         flash(f"The article with title <b>{article.article_title}</b> was updated with success!", "success")
         return redirect(url_for('root'))
 
-    return render_template("new_article.html", form=form)
+    return render_template("new_article.html", form=form, page_title="Modify Article")
