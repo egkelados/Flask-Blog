@@ -19,7 +19,7 @@
      
         <div class="row my-3 p-3 bg-body rounded shadow-sm">
           <div class="col col-md-12">
-            {% if article.article_image %}
+            {% if article.article_image and article.article_image != 'default_article_image.jpg' %}
               <img src="{{ url_for('static', filename='images/articles_images/'+article.article_image) }}" alt="" class="img-responsive a_image" width="340px" height="160px" allign=center>
             {% endif %}
           </div>

@@ -108,22 +108,35 @@ def logout():
     flash("Logout was succesfull", "success")
     return redirect(url_for("root"))
 
-@app.route("/new_article/",methods=['GET', 'POST'])
+
+
+@app.route("/new_article/", methods=["GET", "POST"])
 @login_required
 def new_article():
     form = NewArticleForm()
 
-    if request.method == "POST" and form.validate_on_submit():
+    if request.method == 'POST' and form.validate_on_submit():
         article_title = form.article_title.data
         article_body = form.article_body.data
 
-        article = Article(article_title=article_title, article_body=article_body, author=current_user)
+        if form.article_image.data:
+            try:
+                image_file = image_save(form.article_image.data, 'articles_images', (640,360))
+            except:
+                abort(418)
+
+            article = Article(article_title=article_title,
+                              article_body=article_body,
+                              author=current_user,
+                              article_image=image_file)
+        else:
+            article = Article(article_title=article_title, article_body=article_body, author=current_user)
+
         db.session.add(article)
         db.session.commit()
-        flash(f"The article with title {article.article_title} created with success!", "success")
 
+        flash(f"The article with title {article.article_title} created with success!", "success")
         return redirect(url_for("root"))
-        # print(article_title, article_body)
 
     return render_template("new_article.html", form=form, page_title="New Article Input")
 
@@ -209,7 +222,16 @@ def edit_article(article_id):
         article.article_title = form.article_title.data
         article.article_body = form.article_body.data
 
-        db.session.commit()
+        if form.article_image.data:
+            try:
+                image_file = image_save(form.article_image.data, 'articles_images', (640,360))
+            except:
+                abort(418)
+                #i already have the article so i want to add only the image if...
+            article.article_image = image_file
+
+
+        db.session.commit()# only commit because we have already create the object!
 
         flash(f"The article with title <b>{article.article_title}</b> was updated with success!", "success")
         return redirect(url_for('root'))
