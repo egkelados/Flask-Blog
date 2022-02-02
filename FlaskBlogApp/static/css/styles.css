@@ -102,3 +102,8 @@ footer{
     margin-left: auto;
     margin-right: auto;
 }
+.dots_page{
+	display: inline-block;
+	font-size: xx-large;
+	color: darkblue;
+}

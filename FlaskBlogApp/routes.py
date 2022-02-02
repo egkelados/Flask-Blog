@@ -33,13 +33,24 @@ def image_save(image, where, size):
     return image_filename
 
 
+@app.errorhandler(404)
+def unsupported_media_type(e):
+    # note that we set the 404 status explicitly
+    return render_template('errors/415.html'), 415
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('errors/404.html'), 404
 
 
 
 @app.route("/index/")
 @app.route("/")#arxikh selida!
 def root():
-    articles = Article.query.order_by(Article.date_created.desc())
+    page = request.args.get("page", 1, type=int)
+    articles = Article.query.order_by(Article.date_created.desc()).paginate(per_page=4, page=page)
     return render_template("index.html", articles=articles)
 
 
@@ -47,7 +58,10 @@ def root():
 def articles_by_author(author_id):
 
     user = User.query.get_or_404(author_id)
-    articles = Article.query.filter_by(author=user).order_by(Article.date_created.desc())
+
+    page = request.args.get("page", 1, type=int)
+    articles = Article.query.filter_by(author=user).order_by(Article.date_created.desc()).paginate(per_page=4, page=page)
+
     return render_template("articles_by_author.html", articles=articles, author=user)
 
 
@@ -123,7 +137,7 @@ def new_article():
             try:
                 image_file = image_save(form.article_image.data, 'articles_images', (640,360))
             except:
-                abort(418)
+                abort(415)
 
             article = Article(article_title=article_title,
                               article_body=article_body,
@@ -226,7 +240,7 @@ def edit_article(article_id):
             try:
                 image_file = image_save(form.article_image.data, 'articles_images', (640,360))
             except:
-                abort(418)
+                abort(415)
                 #i already have the article so i want to add only the image if...
             article.article_image = image_file
 
